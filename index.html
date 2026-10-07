@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Manutenção</title>
+    <style>
+        /* Estilização Simples no Formato Mobile em Tons de Azul */
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Imagem de fundo técnica/industrial com sobreposição transparente em azul escuro */
+            background: linear-gradient(rgba(15, 32, 67, 0.82), rgba(15, 32, 67, 0.82)),
+                url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1000&q=80') center/cover no-repeat fixed;
+            display: flex;
+            justify-content: center;
+            padding: 15px 10px;
+            min-height: 100vh;
+        }
+
+        /* Container Simulando a Tela do Celular */
+        .app-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(5px);
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            color: #0b3c5d;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            border-bottom: 2px solid #3282b8;
+            padding-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 20px;
+        }
+
+        /* Formulário e Campos de Entrada */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1b4965;
+            margin-bottom: 4px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #90e0ef;
+            background-color: #f8fdff;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #0f2027;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #0077b6;
+            box-shadow: 0 0 5px rgba(0, 119, 182, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            height: 60px;
+        }
+
+        /* Botões em Tons de Azul */
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #0077b6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #03045e;
+        }
+
+        .btn-secondary {
+            background-color: #48cae4;
+            color: #03045e;
+            margin-top: 5px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #90e0ef;
+        }
+
+        .btn-danger {
+            background-color: #d90429;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        .btn-edit {
+            background-color: #00b4d8;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-right: 5px;
+        }
+
+        /* Lista de Solicitações */
+        .card-item {
+            background-color: #edf2f4;
+            border-left: 4px solid #0077b6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .card-item p {
+            font-size: 0.85rem;
+            color: #2b2d42;
+            margin-bottom: 4px;
+        }
+
+        /* Status e Badges em Tons de Azul */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-Aberto {
+            background-color: #023e8a;
+        }
+
+        .status-Em-manutencao {
+            background-color: #00b4d8;
+            color: white;
+        }
+
+        .status-Concluido {
+            background-color: #2a9d8f;
+        }
+
+        .actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .api-box {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-card">
+        <h1>Controle de Manutenção</h1>
+
+        <!-- FORMULÁRIO DE CADASTRO E EDIÇÃO -->
+        <form id="formManutencao">
+            <input type="hidden" id="idSolicitacao">
+
+            <div class="form-group">
+                <label for="responsavel">Responsável pela Solicitação *</label>
+                <input type="text" id="responsavel" placeholder="Ex: João da Silva">
+            </div>
+
+            <div class="form-group">
+                <label for="equipamento">Equipamento / Máquina *</label>
+                <input type="text" id="equipamento" placeholder="Ex: Torno Mecânico CNC">
+            </div>
+
+            <!-- REQUISIÇÃO API REST (Consulta CEP para buscar Setor/Unidade) -->
+            <div class="form-group">
+                <label for="cep">CEP do Setor/Unidade (Consulta API) *</label>
+                <div class="api-box">
+                    <input type="text" id="cep" placeholder="Ex: 01001000" maxlength="8">
+                    <button type="button" class="btn btn-secondary" onclick="buscarSetorPorCEP()"
+                        style="width: 40%;">Buscar</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setor">Setor / Localização *</label>
+                <input type="text" id="setor" placeholder="Ex: Galpão 1 - Usinagem">
+            </div>
+
+            <div class="form-group">
+                <label for="descricao">Descrição do Problema *</label>
+                <textarea id="descricao" placeholder="Descreva o defeito apresentado"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="prioridade">Nível de Prioridade *</label>
+                <select id="prioridade">
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Status da Manutenção *</label>
+                <select id="status">
+                    <option value="Aberto">Aberto</option>
+                    <option value="Em Manutenção">Em Manutenção</option>
+                    <option value="Concluído">Concluído</option>
+                </select>
+            </div>
+
+            <button type="submit" id="btnSalvar" class="btn btn-primary">Salvar Solicitação</button>
+            <button type="button" id="btnCancelar" class="btn btn-secondary" onclick="limparFormulario()"
+                style="display:none;">Cancelar Edição</button>
+        </form>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #caf0f8;">
+
+        <!-- LISTA DE REGISTROS -->
+        <h2>Solicitações Cadastradas</h2>
+        <div id="listaSolicitacoes">
+            <!-- Ocorrências serão renderizadas via JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // PERSISTÊNCIA DE DADOS (LocalStorage)
+        let solicitacoes = JSON.parse(localStorage.getItem('manutencoes_db')) || [];
+
+        // Referências aos elementos do DOM
+        const form = document.getElementById('formManutencao');
+        const inputId = document.getElementById('idSolicitacao');
+        const inputResponsavel = document.getElementById('responsavel');
+        const inputEquipamento = document.getElementById('equipamento');
+        const inputCep = document.getElementById('cep');
+        const inputSetor = document.getElementById('setor');
+        const inputDescricao = document.getElementById('descricao');
+        const selectPrioridade = document.getElementById('prioridade');
+        const selectStatus = document.getElementById('status');
+        const btnSalvar = document.getElementById('btnSalvar');
+        const btnCancelar = document.getElementById('btnCancelar');
+        const listaContainer = document.getElementById('listaSolicitacoes');
+
+        // Executa ao carregar a página (READ)
+        document.addEventListener('DOMContentLoaded', listarSolicitacoes);
+
+        //  REQUISIÇÃO API REST (GET) 
+        function buscarSetorPorCEP() {
+            const cep = inputCep.value.trim().replace(/\D/g, '');
+
+            if (cep.length !== 8) {
+                alert('Por favor, informe um CEP válido com 8 dígitos para a API.');
+                return;
+            }
+
+            // Consumo da API REST pública do ViaCEP
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Falha ao comunicar com a API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado na API.');
+                    } else {
+                        // Manipulação dos dados recebidos em JSON
+                        inputSetor.value = `Setor ${data.bairro} - ${data.localidade}/${data.uf}`;
+                    }
+                })
+                .catch(erro => {
+                    // Tratamento de erros de comunicação
+                    alert('Erro ao consultar API externa: ' + erro.message);
+                });
+        }
+
+        // CREATE e UPDATE 
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+            if (!inputResponsavel.value.trim() ||
+                !inputEquipamento.value.trim() ||
+                !inputSetor.value.trim() ||
+                !inputDescricao.value.trim()) {
+                alert('Por favor, preencha todos os campos obrigatórios (*).');
+                return;
+            }
+
+            const id = inputId.value;
+
+            if (id) {
+                // UPDATE: Atualiza um registro existente
+                const index = solicitacoes.findIndex(item => item.id == id);
+                if (index !== -1) {
+                    solicitacoes[index].responsavel = inputResponsavel.value.trim();
+                    solicitacoes[index].equipamento = inputEquipamento.value.trim();
+                    solicitacoes[index].setor = inputSetor.value.trim();
+                    solicitacoes[index].descricao = inputDescricao.value.trim();
+                    solicitacoes[index].prioridade = selectPrioridade.value;
+                    solicitacoes[index].status = selectStatus.value;
+                }
+            } else {
+                // CREATE: Cadastra uma nova solicitação
+                const novaSolicitacao = {
+                    id: Date.now(),
+                    responsavel: inputResponsavel.value.trim(),
+                    equipamento: inputEquipamento.value.trim(),
+                    setor: inputSetor.value.trim(),
+                    descricao: inputDescricao.value.trim(),
+                    prioridade: selectPrioridade.value,
+                    status: selectStatus.value
+                };
+                solicitacoes.push(novaSolicitacao);
+            }
+
+            salvarEAtualizar();
+            limparFormulario();
+        });
+
+        // READ: Listar Ocorrências 
+        function listarSolicitacoes() {
+            listaContainer.innerHTML = '';
+
+            if (solicitacoes.length === 0) {
+                listaContainer.innerHTML = '<p style="text-align:center; color:#555;">Nenhuma solicitação cadastrada.</p>';
+                return;
+            }
+
+            solicitacoes.forEach(item => {
+                const statusClass = 'status-' + item.status.replace(/\s+/g, '-');
+
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML = `
+          <p><strong>Máquina:</strong> ${item.equipamento}</p>
+          <p><strong>Setor:</strong> ${item.setor}</p>
+          <p><strong>Problema:</strong> ${item.descricao}</p>
+          <p><strong>Responsável:</strong> ${item.responsavel}</p>
+          <p><strong>Prioridade:</strong> ${item.prioridade}</p>
+          <p><strong>Status:</strong> <span class="badge ${statusClass}">${item.status}</span></p>
+          
+          <div class="actions">
+            <button class="btn btn-edit" onclick="prepararEdicao(${item.id})">Editar / Status</button>
+            <button class="btn btn-danger" onclick="excluirSolicitacao(${item.id})">Excluir</button>
+          </div>
+        `;
+                listaContainer.appendChild(card);
+            });
+        }
+
+        // PREPARAR EDIÇÃO (UPDATE)
+        function prepararEdicao(id) {
+            const item = solicitacoes.find(s => s.id === id);
+            if (item) {
+                inputId.value = item.id;
+                inputResponsavel.value = item.responsavel;
+                inputEquipamento.value = item.equipamento;
+                inputSetor.value = item.setor;
+                inputDescricao.value = item.descricao;
+                selectPrioridade.value = item.prioridade;
+                selectStatus.value = item.status;
+
+                btnSalvar.textContent = 'Atualizar Solicitação';
+                btnCancelar.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // DELETE: Excluir Ocorrência 
+        function excluirSolicitacao(id) {
+            if (confirm('Deseja realmente excluir esta solicitação?')) {
+                solicitacoes = solicitacoes.filter(item => item.id !== id);
+                salvarEAtualizar();
+            }
+        }
+
+        // PERSISTÊNCIA 
+        function salvarEAtualizar() {
+            localStorage.setItem('manutencoes_db', JSON.stringify(solicitacoes));
+            listarSolicitacoes();
+        }
+
+        // AUXILIAR: Limpar Formulário
+        function limparFormulario() {
+            form.reset();
+            inputId.value = '';
+            btnSalvar.textContent = 'Salvar Solicitação';
+            btnCancelar.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
